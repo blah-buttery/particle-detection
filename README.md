@@ -34,7 +34,7 @@ python -m particle_detection.autoencoder.train_model \
     --batch_size 4 \
     --learning_rate 0.001 \
     --dataset_dir path/to/data \
-    --model_path saved_models/model.pth
+    --model_path saved_models/<model-file>
 ```
 
 Training on Multiple GPUs
@@ -44,7 +44,7 @@ python -m particle_detection.autoencoder.train_model \
     --batch_size 4 \
     --learning_rate 0.001 \
     --dataset_dir path/to/data \
-    --model_path saved_models/model.pth \
+    --model_path saved_models/<model-file> \
     --is_ddp
 ```
 This command trains the model using Distributed Data Parallel (DDP) across 4 GPUs.
