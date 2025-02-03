@@ -10,21 +10,21 @@ This repository contains code for training and evaluating deep learning models f
    git clone https://github.com/your-username/particle-detection.git
    ```
 2. Navigate into the project directory:
-    '''bash
+    ```bash
     cd particle-detection
-    '''
+    ```
 
 3. Install dependencies
-    '''bash
+    ```bash
     pip install -r requirements.txt
-    '''
+    ```
 4. Install Git LFS (For saved models)
-    - macOS: '''bash sudo apt intall-lfs '''
-    - Linux: '''bash brew install git-lfs '''
+    - macOS: ```bash sudo apt intall-lfs ```
+    - Linux: ```bash brew install git-lfs ```
 5. After cloning, Git LFS will automatically handle large files like saved models. If needed, run:
-    '''bash
+    ```bash
     git lfs pull
-    '''
+    ```
 
 ## Training the model
 To train the model, run the following command:
@@ -38,7 +38,7 @@ python -m particle_detection.autoencoder.train_model \
 ```
 
 Training on Multiple GPUs
-'''bash
+```bash
 python -m particle_detection.autoencoder.train_model \
     --num_epochs 10 \
     --batch_size 4 \
@@ -46,7 +46,7 @@ python -m particle_detection.autoencoder.train_model \
     --dataset_dir path/to/data \
     --model_path path/to/saved/model.pth \
     --is_ddp
-'''
+```
 This command trains the model using Distributed Data Parallel (DDP) across 4 GPUs.
 
 ## Evaluating the model
@@ -58,23 +58,23 @@ python -m particle_detection.autoencoder.evaluate \
 ```
 ## Saved Models
 This project uses Git LFS (Large File Storage) to manage large files like saved models in the saved_models/ directory. If you encounter issues with saved models, ensure Git LFS is installed and run:
-'''bash
+```bash
 git lfs pull
-'''
+```
 
 ### Adding or Updating Saved Models
 To add or update models in the saved_models/ directory:
 1. Save the model in the directory.
 2. Track the file type with Git LFS:
-    '''bash
+    ```bash
     git lfs track "*.pth"
-    '''
+    ```
 3. Commit and push:
-    '''bash
+    ```bash
     git add saved_models/<model-file>
     git commit -m "Add new model"
     git push origin main
-    '''
+    ```
 
 ## Notebooks
 The notebooks directory contains Jupyter Notebook examples for:
@@ -88,15 +88,15 @@ These notebooks are designed to provide a quick and interactive way to understan
 
 1. Fork the repository
 2. Create a new branch:
-    '''bash
+    ```bash
     git checkout -b feature/your-feature-name
-    '''
+    ```
 3. Commit your changes:
-    '''bash
+    ```bash
     git commit -m "Add your feature description"
-    '''
+    ```
 4. Push to the branch
-    '''bash
+    ```bash
     git push origin feature/your-feature-name
-    '''
+    ```
 5. Open a pull request 
