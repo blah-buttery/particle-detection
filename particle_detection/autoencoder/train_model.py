@@ -42,7 +42,7 @@ def train(
 
     # Load dataset
     print("[DEBUG] Loading dataset...")
-    transform = get_transforms(image_size=(2048, 2048), is_train=True)
+    transform = get_transforms(image_size=(1024, 1024), is_train=True)
     dataset = ImageDataset(data_dir=dataset_dir, transform=transform, split="train", test_size=0.2)
     print(f"[DEBUG] Total dataset size: {len(dataset)}")
 
