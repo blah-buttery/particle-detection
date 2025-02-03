@@ -7,7 +7,7 @@ This repository contains code for training and evaluating deep learning models f
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/particle-detection.git
+   git clone https://github.com/blah-buttery/particle-detection.git
    ```
 2. Navigate into the project directory:
     ```bash
