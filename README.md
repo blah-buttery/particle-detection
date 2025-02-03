@@ -34,7 +34,7 @@ python -m particle_detection.autoencoder.train_model \
     --batch_size 4 \
     --learning_rate 0.001 \
     --dataset_dir path/to/data \
-    --model_path saved_models/autoencoder_small.pth
+    --model_path saved_models/model.pth
 ```
 
 Training on Multiple GPUs
@@ -44,7 +44,7 @@ python -m particle_detection.autoencoder.train_model \
     --batch_size 4 \
     --learning_rate 0.001 \
     --dataset_dir path/to/data \
-    --model_path path/to/saved/model.pth \
+    --model_path saved_models/model.pth \
     --is_ddp
 ```
 This command trains the model using Distributed Data Parallel (DDP) across 4 GPUs.
@@ -53,7 +53,7 @@ This command trains the model using Distributed Data Parallel (DDP) across 4 GPU
 To evaluate the model, run:
 ```bash
 python -m particle_detection.autoencoder.evaluate \
-    --model_path saved_models/autoencoder_small.pth \
+    --model_path saved_models/model.pth \
     --dataset_dir path/to/data
 ```
 ## Saved Models
@@ -80,7 +80,7 @@ To add or update models in the saved_models/ directory:
 The notebooks directory contains Jupyter Notebook examples for:
 
 1. Running experiments: Pre-configured examples to train or evaluate the model on sample datasets.
-2. Viewing results: Visualizations of original and reconstructed images from the model, along with performance metrics.
+2. Viewing results: Visualizations of original and reconstructed images from the model, along with clustering results.
 
 These notebooks are designed to provide a quick and interactive way to understand and test the functionality of the project.
 
