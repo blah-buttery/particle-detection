@@ -47,7 +47,7 @@ python -m particle_detection.autoencoder.train_model \
     --model_path saved_models/<model-file> \
     --is_ddp
 ```
-This command trains the model using Distributed Data Parallel (DDP) across 4 GPUs.
+This command trains the model using Distributed Data Parallel (DDP).
 
 ## Evaluating the model
 To evaluate the model, run:
