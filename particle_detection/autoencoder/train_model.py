@@ -1,11 +1,12 @@
 import os
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, distributed
 from torch import optim, nn, distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
-from particle_detection.data.dataset import ImageDataset, get_transforms
-from particle_detection.autoencoder.model import create_autoencoder
+from particle_detection.data.dataset import ImageDataset, get_transforms, create_dataloaders
+from particle_detection.autoencoder.model import create_autoencoder, create_vae
 from particle_detection.autoencoder.utils import save_model, load_model
+import argparse
 
 def setup_ddp(rank, world_size):
     """
@@ -30,124 +31,130 @@ def train(
     num_epochs=10,
     batch_size=16,
     learning_rate=0.0001,
-    dataset_dir="images/normal",
-    model_path=None
+    data_dir="/path/to/dataset",
+    model_save_path="/path/to/save/model.pt",
+    model_fn=None,
+    criterion_fn=None
 ):
-    if is_ddp:
-        setup_ddp(rank, world_size)
+    """
+    Train the model.
 
-    # Device configuration
+    :param rank: Rank of the current process (for DDP).
+    :param world_size: Total number of processes (for DDP).
+    :param is_ddp: Whether to use DDP.
+    :param num_epochs: Number of training epochs.
+    :param batch_size: Batch size for training.
+    :param learning_rate: Learning rate for the optimizer.
+    :param data_dir: Path to the dataset directory.
+    :param model_save_path: Path to save the trained model.
+    :param model_fn: Function to create the model.
+    :param criterion_fn: Function to create the loss criterion.
+    """
+    # Setup device
     device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
-    print(f"[DEBUG] Using device: {device}")
+    print(f"[INFO] Using device: {device}")
 
-    # Load dataset
-    print("[DEBUG] Loading dataset...")
+    # Get transforms
     transform = get_transforms(image_size=(1024, 1024), is_train=True)
-    dataset = ImageDataset(data_dir=dataset_dir, transform=transform, split="train", test_size=0.2)
-    print(f"[DEBUG] Total dataset size: {len(dataset)}")
 
-    train_size = int(0.8 * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
-    print(f"[DEBUG] Train size: {train_size}, Test size: {test_size}")
-
+    # Create dataset
+    dataset = ImageDataset(data_dir, transform=transform)
+    
+    # Apply DistributedSampler if using DDP
     if is_ddp:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, sampler=train_sampler)
+        train_sampler = distributed.DistributedSampler(dataset, num_replicas=world_size, rank=rank)
+        shuffle = False  # Shuffling is handled by the sampler
     else:
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+        train_sampler = None
+        shuffle = True
+    
+    # Create DataLoader
+    train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=shuffle, sampler=train_sampler)
+    
+    # Validate batch size
+    if batch_size > len(train_loader.dataset):
+        print(f"[WARNING] Batch size ({batch_size}) exceeds dataset size ({len(train_loader.dataset)}). Adjusting batch size.")
+        batch_size = len(train_loader.dataset)
 
-    test_loader = DataLoader(test_dataset, batch_size=batch_size)
-
-    print("[DEBUG] Dataloaders prepared.")
-
-    # Load model
-    print("[DEBUG] Initializing model...")
-    model = create_autoencoder().to(device)
-    if model_path:
-        print(f"[DEBUG] Loading model from {model_path}")
-        model = load_model(model, model_path=model_path, device=device)
+    # Initialize model
+    if model_fn is None:
+        raise ValueError("A model creation function (model_fn) must be provided. Available types: autoencoder, vae, cnn.")
+    model = model_fn()
+    model.to(device)
 
     if is_ddp:
         model = DDP(model, device_ids=[rank])
-        print("[DEBUG] Model wrapped with DDP.")
 
-    # Define loss and optimizer
-    criterion = nn.MSELoss()
+    # Loss and optimizer
+    if criterion_fn is None:
+        raise ValueError("A loss criterion function (criterion_fn) must be provided.")
+    if not callable(criterion_fn):
+        raise TypeError("Provided criterion_fn must be callable. Ensure you are passing a valid loss function.")
+    criterion = criterion_fn()
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    print("[DEBUG] Loss function and optimizer initialized.")
 
     # Training loop
-    print("[DEBUG] Starting training loop...")
     for epoch in range(num_epochs):
-        print(f"[DEBUG] Starting epoch {epoch + 1}/{num_epochs}")
-        model.train()
         if is_ddp:
+            # Set epoch to ensure proper shuffling across all processes in DDP
             train_sampler.set_epoch(epoch)
+        model.train()
         train_loss = 0.0
 
-        for batch_idx, images in enumerate(train_loader):
-            images = images.to(device)
+        for batch in train_loader:
+            batch = batch.to(device)
 
+            # Forward pass
+            outputs = model(batch)
+            loss = criterion(outputs, batch)
+
+            # Backward pass and optimization
             optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, images)
             loss.backward()
             optimizer.step()
+
             train_loss += loss.item()
 
-            # Print progress every 10 batches
-            if batch_idx % 10 == 0:
-                print(f"[DEBUG] Rank {rank if is_ddp else 'Single'} - Epoch {epoch + 1} - Batch {batch_idx + 1}/{len(train_loader)}")
+        print(f"[INFO] Epoch [{epoch + 1}/{num_epochs}], Loss: {train_loss / len(train_loader):.4f}")
 
-        train_loss /= len(train_loader)
-        print(f"[DEBUG] Rank {rank if is_ddp else 'Single'}, Epoch [{epoch + 1}/{num_epochs}], Training Loss: {train_loss:.4f}")
-
-    # Save model
+    # Save the model
     if rank == 0 or not is_ddp:
-        print(f"[DEBUG] Saving model to {model_path}")
-        save_model(model, model_path)
+        save_model(model, model_save_path)
+        print(f"[INFO] Model saved to {model_save_path}")
 
+    # Cleanup
     if is_ddp:
         cleanup_ddp()
 
-DEFAULT_MODEL_PATH = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../../saved_models/autoencoder.pth")
-)
-
 if __name__ == "__main__":
-    import argparse
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="Train Model")
+    parser.add_argument("--world_size", type=int, default=torch.cuda.device_count(), help="Total number of processes (for DDP)")
+    parser.add_argument("--is_ddp", action="store_true", help="Use Distributed Data Parallel (DDP)")
     parser.add_argument("--num_epochs", type=int, default=10, help="Number of training epochs")
     parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
-    parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate for optimizer")
-    parser.add_argument("--dataset_dir", type=str, default="images/normal", help="Path to dataset directory")
-    parser.add_argument("--model_path", type=str, default=DEFAULT_MODEL_PATH, help="Path to a pre-trained model for fine-tuning")
-    parser.add_argument("--world_size", type=int, default=torch.cuda.device_count(), help="Number of GPUs to use")
-    parser.add_argument("--is_ddp", action="store_true", help="Use Distributed Data Parallel (multi-GPU)")
+    parser.add_argument("--learning_rate", type=float, default=0.0001, help="Learning rate for the optimizer")
+    parser.add_argument("--data_dir", type=str, required=True, help="Path to the dataset directory")
+    parser.add_argument("--model_save_path", type=str, required=True, help="Path to save the trained model")
+    parser.add_argument("--model_type", type=str, required=True, help="Type of model to train (autoencoder, vae, cnn)")
     args = parser.parse_args()
 
-    print(f"[DEBUG] Saving model to: {args.model_path}")
-    os.makedirs(os.path.dirname(args.model_path), exist_ok=True)
+    model_map = {
+        "autoencoder": create_autoencoder,
+        "vae": create_vae,
+        "cnn": create_cnn
+    }
+    
+    criterion_map = {
+        "autoencoder": nn.MSELoss,
+        "vae": nn.BCELoss,
+        "cnn": nn.CrossEntropyLoss
+    }
+    
+    if args.model_type not in model_map:
+        raise ValueError(f"Unsupported model type: {args.model_type}. Available types: autoencoder, vae, cnn.")
 
-    if args.is_ddp and args.world_size > 1:
-        print("[DEBUG] Launching DDP training...")
-        torch.multiprocessing.spawn(
-            train,
-            args=(args.world_size, args.is_ddp, args.num_epochs, args.batch_size, args.learning_rate, args.dataset_dir, args.model_path),
-            nprocs=args.world_size,
-            join=True
-        )
-    else:
-        print("[DEBUG] Launching single-device training...")
-        train(
-            rank=0,
-            world_size=1,
-            is_ddp=False,
-            num_epochs=args.num_epochs,
-            batch_size=args.batch_size,
-            learning_rate=args.learning_rate,
-            dataset_dir=args.dataset_dir,
-            model_path=args.model_path
-        )
+    model_fn = model_map[args.model_type]
+    criterion_fn = criterion_map[args.model_type]
+
+    train(0, args.world_size, args.is_ddp, args.num_epochs, args.batch_size, args.learning_rate, args.data_dir, args.model_save_path, model_fn, criterion_fn)
