@@ -42,23 +42,23 @@ data/raw/
 This repository contains code for training and evaluating deep learning models for nanoparticle detection.
 
 #files i dont want to track
-notebooks/augmented_nanoparticles_with_tensorboard.ipynb
-notebooks/broken_vae.ipynb
-notebooks/contour_reconstruction_sw.ipynb
-notebooks/dbscan_after_autoencoder.ipynb
-notebooks/dbscan_on_latent.ipynb
-notebooks/dbscan_sw.ipynb
-notebooks/error_map_analysis_Copy1.ipynb
-notebooks/error_map_analysis_sw.ipynb
-notebooks/g.ipynb
-notebooks/gmm_1024_in_depth.ipynb
-notebooks/gmm_2048_in_depth.ipynb
-notebooks/gmm_sw.ipynb
-notebooks/loaded_dbscan_on_latent.ipynb
-notebooks/test_Copy1.ipynb
-notebooks/test2.ipynb
-notebooks/vae_5epochs.ipynb
-notebooks/vae_improved.ipynb
-notebooks/error_map_analysis-Copy1.ipynb
-notebooks/test-Copy1.ipynb
-notebooks/test.ipynb
+examples/augmented_nanoparticles_with_tensorboard.ipynb
+examples/broken_vae.ipynb
+examples/contour_reconstruction_sw.ipynb
+examples/dbscan_after_autoencoder.ipynb
+examples/dbscan_on_latent.ipynb
+examples/dbscan_sw.ipynb
+examples/error_map_analysis_Copy1.ipynb
+examples/error_map_analysis_sw.ipynb
+examples/g.ipynb
+examples/gmm_1024_in_depth.ipynb
+examples/gmm_2048_in_depth.ipynb
+examples/gmm_sw.ipynb
+examples/loaded_dbscan_on_latent.ipynb
+examples/test_Copy1.ipynb
+examples/test2.ipynb
+examples/vae_5epochs.ipynb
+examples/vae_improved.ipynb
+examples/error_map_analysis-Copy1.ipynb
+examples/test-Copy1.ipynb
+examples/test.ipynb
