@@ -50,7 +50,7 @@ def plot_explained_variance(pca, title="Explained Variance by Number of Componen
   plt.grid()
   plt.show()
 
-# Example usage (can be removed if not needed in the final file)
+# example
 if __name__ == "__main__":
   # Simulate some data
   np.random.seed(42)
