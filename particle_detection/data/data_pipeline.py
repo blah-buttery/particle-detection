@@ -6,7 +6,7 @@ from torchvision import transforms
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader, distributed
 
-class ImageDataset(Dataset):
+class Data_Class(Dataset):
     """
     Custom Dataset for loading images with train-test splitting functionality.
 
@@ -75,7 +75,7 @@ def preprocess_image(image):
     """
     sample = np.array(image)
     sample = cv2.normalize(sample, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    processed_image = Image.fromarray(sample).convert('RGB')
+    processed_image = Image.fromarray(sample).convert('L')
     return processed_image
 
 
@@ -127,14 +127,14 @@ def create_dataloaders(data_dir, image_size=(224, 224), batch_size=8, test_size=
     """
     image_size = tuple(image_size)
     
-    train_dataset = ImageDataset(
+    train_dataset = Data_Class(
         data_dir=data_dir,
         transform=get_transforms(image_size=image_size, is_train=True),
         split="train",
         test_size=test_size
     )
 
-    test_dataset = ImageDataset(
+    test_dataset = Data_Class(
         data_dir=data_dir,
         transform=get_transforms(image_size=image_size, is_train=False),
         split="test",
