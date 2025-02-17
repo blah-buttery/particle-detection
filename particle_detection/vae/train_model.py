@@ -3,12 +3,13 @@ import json
 import argparse
 
 import torch
+import torch.nn as nn
 import torch.multiprocessing as mp
 from torch.utils.data import DataLoader, distributed
 from torch.nn.parallel import DistributedDataParallel as DDP
 
 from particle_detection.data.data_pipeline import create_dataloaders
-from particle_detection.vae.model import create_vae  # Import VAE model
+from particle_detection.vae.model import create_vae
 from particle_detection.utils.training_utils import track_metrics
 from particle_detection.utils.ddp_utils import setup_ddp, cleanup_ddp
 from particle_detection.utils.model_utils import save_model, save_metrics_and_plots
@@ -30,9 +31,8 @@ def train(rank, world_size, is_ddp, track_metrics_flag, num_epochs, batch_size, 
     """
     if torch.cuda.is_available():
         torch.cuda.set_device(rank)
-    device = torch.device(
-        f"cuda:{rank}" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-    )
+
+    device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
     print(f"Rank {rank} using device: {device}")
 
     # Create dataloaders
@@ -46,15 +46,17 @@ def train(rank, world_size, is_ddp, track_metrics_flag, num_epochs, batch_size, 
     )
 
     # Load VAE model with transferred AE weights
-    vae = create_vae("./saved_models/ae_1001_1024x1024/model.pth")
+    vae = create_vae("./saved_models/ae_300_1024x1024/model.pth")
     vae.to(device)
+    
+    beta=1.5
 
     if is_ddp:
         vae = DDP(vae, device_ids=[rank])
 
     optimizer = torch.optim.Adam(vae.parameters(), lr=learning_rate)
 
-    def vae_loss(recon_x, x, mu, logvar, beta=0.1):
+    def vae_loss(recon_x, x, mu, logvar, beta=1.0):
         """VAE loss function: Reconstruction loss + KL Divergence"""
         recon_loss = torch.nn.functional.mse_loss(recon_x, x, reduction='sum') / x.size(0)
         kl_div = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp()) / x.size(0)
@@ -74,11 +76,12 @@ def train(rank, world_size, is_ddp, track_metrics_flag, num_epochs, batch_size, 
 
             # Forward pass
             recon_x, mu, logvar = vae(batch)
-            loss = vae_loss(recon_x, batch, mu, logvar, beta=0.1)
+            loss = vae_loss(recon_x, batch, mu, logvar, beta=beta)
 
             # Backward pass and optimization
             optimizer.zero_grad()
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(vae.parameters(), max_norm=5.0)
             optimizer.step()
 
             train_loss += loss.item()
@@ -108,14 +111,20 @@ def train(rank, world_size, is_ddp, track_metrics_flag, num_epochs, batch_size, 
                 image_size
             )
 
+        for img in train_loader:
+          color_mode = "grayscale" if img.shape[1] == 1 else "rgb"
+          break
+
         # Save training config
         config_save_path = os.path.join(model_dir, "config.json")
         with open(config_save_path, "w") as f:
             json.dump({
-                "num_epochs": num_epochs,
                 "image_size": image_size,
                 "batch_size": batch_size,
+                "image_type": color_mode,
+                "num_epochs": num_epochs,
                 "learning_rate": learning_rate,
+                "beta": beta,
                 "ddp": is_ddp,
                 "data_dir": data_dir
             }, f, indent=4)

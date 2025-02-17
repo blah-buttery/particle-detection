@@ -7,16 +7,16 @@ class VAE(nn.Module):
     def __init__(self, encoder, decoder, latent_dim=256, input_channels=1):
         super(VAE, self).__init__()
 
-        self.encoder = encoder  # Transferred VGG16 encoder
+        self.encoder = encoder  # transferred VGG16 encoder
 
         # Latent space layers
-        self.flattened_dim = 512 * 8 * 8  # Expected VGG16 output size for 1024x1024 images
+        self.flattened_dim = 512 * 8 * 8 
         self.fc_mu = nn.Linear(self.flattened_dim, latent_dim)
         self.fc_logvar = nn.Linear(self.flattened_dim, latent_dim)
 
-        # Decoder: Progressive Upsampling (64×64 → 1024×1024)
+        # Decoder 64×64 → 1024×1024
         self.fc_decoder = nn.Linear(latent_dim, self.flattened_dim)
-        self.decoder = decoder  # Transferred decoder
+        self.decoder = decoder  # transferred decoder
 
     def modify_encoder_for_grayscale(self, encoder):
         """Modifies the first convolutional layer of the encoder to accept grayscale images."""
@@ -30,7 +30,8 @@ class VAE(nn.Module):
         )
 
         # Copy existing weights by averaging across RGB channels
-        new_first_layer.weight.data = first_layer.weight.mean(dim=1, keepdim=True)
+        new_first_layer.weight.data = first_layer.weight.mean(dim=1, keepdim=True).detach()
+        new_first_layer.bias.data = first_layer.bias.data.clone().detach()
 
         # Replace the first layer in the encoder
         encoder[0] = new_first_layer
@@ -78,8 +79,10 @@ def create_vae(autoencoder_path, input_channels=1):
     decoder = autoencoder.decoder
 
     # Create VAE with transferred weights
-    vae = VAE(encoder, decoder, input_channels=1)
-    #vae = VAE(encoder, decoder, input_channels=input_channels)
+    #vae = VAE(encoder, decoder, input_channels=1)
+    vae = VAE(encoder, decoder, input_channels=input_channels)
+    if input_channels ==1:
+      vae.modify_encoder_for_grayscale(vae.encoder)
 
     return vae
 
