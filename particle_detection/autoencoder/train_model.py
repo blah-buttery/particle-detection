@@ -34,7 +34,7 @@ def train(rank, world_size, is_ddp, track_metrics_flag, num_epochs, batch_size, 
     if torch.cuda.is_available():
         torch.cuda.set_device(rank)
     device = torch.device(
-        f"cuda:{rank}" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+        f"cuda:{rank}" if torch.cuda.is_available() else "cpu"
     )
     print(f"Rank {rank} using device: {device}")
 
