@@ -13,7 +13,6 @@ This repository contains code for training and evaluating deep learning models f
     ```bash
     cd particle-detection
     ```
-
 3. Install dependencies
     ```bash
     pip install -r requirements.txt
@@ -27,35 +26,19 @@ This repository contains code for training and evaluating deep learning models f
     ```
 
 ## Training the model
-To train the model, run the following command:
+To train the autoencoder model, run the following command:
 ```bash
-python -m particle_detection.autoencoder.train_model \
-    --num_epochs 10 \
-    --batch_size 4 \
-    --learning_rate 0.001 \
-    --dataset_dir path/to/data \
-    --model_path saved_models/<model-file>
+python -m particle_detection.autoencoder.train_model --num_epochs 10 --batch_size 8 \            
+    --learning_rate 0.01 --data_dir ./data --image_size 1024 1024
+
 ```
 
-Training on Multiple GPUs
+To train the variational autoencoder model, run the following command:
 ```bash
-python -m particle_detection.autoencoder.train_model \
-    --num_epochs 10 \
-    --batch_size 4 \
-    --learning_rate 0.001 \
-    --dataset_dir path/to/data \
-    --model_path saved_models/<model-file> \
-    --is_ddp
+python -m particle_detection.vae.train_model --num_epochs 10 --batch_size 128 \            
+    --learning_rate 0.01 --data_dir ./patches_dataset --image_size 128 128
 ```
-This command trains the model using Distributed Data Parallel (DDP).
 
-## Evaluating the model
-To evaluate the model, run:
-```bash
-python -m particle_detection.autoencoder.evaluate \
-    --model_path saved_models/model.pth \
-    --dataset_dir path/to/data
-```
 ## Saved Models
 This project uses Git LFS (Large File Storage) to manage large files like saved models in the saved_models/ directory. If you encounter issues with saved models, ensure Git LFS is installed and run:
 ```bash
@@ -63,21 +46,22 @@ git lfs pull
 ```
 
 ### Adding or Updating Saved Models
+Models save automatically when trained.
 To add or update models in the saved_models/ directory:
-1. Save the model in the directory.
-2. Track the file type with Git LFS:
+
+1. Track the file type with Git LFS:
     ```bash
     git lfs track "*.pth"
     ```
-3. Commit and push:
+2. Commit and push:
     ```bash
-    git add saved_models/<model-file>
+    git add saved_models/<model-folder>/<model-file>
     git commit -m "Add new model"
     git push origin main
     ```
 
-## Notebooks
-The notebooks directory contains Jupyter Notebook examples for:
+## Examples
+The examples directory contains Jupyter Notebook examples for:
 
 1. Running experiments: Pre-configured examples to train or evaluate the model on sample datasets.
 2. Viewing results: Visualizations of original and reconstructed images from the model, along with clustering results.
