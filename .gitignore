@@ -42,23 +42,4 @@ data/raw/
 This repository contains code for training and evaluating deep learning models for nanoparticle detection.
 
 #files i dont want to track
-examples/augmented_nanoparticles_with_tensorboard.ipynb
-examples/broken_vae.ipynb
-examples/contour_reconstruction_sw.ipynb
-examples/dbscan_after_autoencoder.ipynb
-examples/dbscan_on_latent.ipynb
-examples/dbscan_sw.ipynb
-examples/error_map_analysis_Copy1.ipynb
-examples/error_map_analysis_sw.ipynb
-examples/g.ipynb
-examples/gmm_1024_in_depth.ipynb
-examples/gmm_2048_in_depth.ipynb
-examples/gmm_sw.ipynb
-examples/loaded_dbscan_on_latent.ipynb
-examples/test_Copy1.ipynb
-examples/test2.ipynb
-examples/vae_5epochs.ipynb
-examples/vae_improved.ipynb
-examples/error_map_analysis-Copy1.ipynb
-examples/test-Copy1.ipynb
-examples/test.ipynb
+notebooks/
