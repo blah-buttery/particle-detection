@@ -43,3 +43,6 @@ This repository contains code for training and evaluating deep learning models f
 
 #files i dont want to track
 notebooks/
+saved_models/labels_tensor.pt
+saved_models/z1_tensor.pt
+saved_models/z2_tensor.pt
