@@ -33,15 +33,6 @@ def create_autoencoder():
     #pretrained_encoder = models.vgg16(weights.IMAGENET1K_V1)
 
     # for 1024x1024
-    '''
-    new_first_layer = nn.Conv2d(
-        in_channels=1,
-        out_channels=64,
-        kernel_size=3,
-        stride=1,
-        padding=1
-    )
-    '''
     new_first_layer = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1)
 
     # Copy weights (average RGB channels to single grayscale channel)
