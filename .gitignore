@@ -33,9 +33,6 @@ venv/
 dataset/
 data/raw/
 
-# Allow saved_models
-!saved_models/
-
 # README.md
 # Particle Detection
 
@@ -43,6 +40,7 @@ This repository contains code for training and evaluating deep learning models f
 
 #files i dont want to track
 notebooks/
-saved_models/labels_tensor.pt
-saved_models/z1_tensor.pt
-saved_models/z2_tensor.pt
+128x128_patches_dataset/
+patches_dataset/
+data/
+saved_models/
