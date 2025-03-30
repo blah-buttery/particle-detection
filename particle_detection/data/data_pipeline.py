@@ -5,17 +5,64 @@ from PIL import Image
 from torchvision import transforms
 from sklearn.model_selection import train_test_split
 from torch.utils.data import Dataset, DataLoader, distributed
+import torch
+
+#########################################
+# Common Functions & Transforms
+#########################################
+
+def preprocess_image(image):
+    """
+    Normalize and convert an image to grayscale ('L') format.
+    
+    Args:
+        image (PIL.Image.Image): Input PIL image.
+    
+    Returns:
+        PIL.Image.Image: Preprocessed PIL image.
+    """
+    sample = np.array(image)
+    sample = cv2.normalize(sample, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+    processed_image = Image.fromarray(sample).convert('L')
+    return processed_image
+
+def get_transforms(image_size=(224, 224), is_train=True):
+    """
+    Generate transformation pipeline for training or testing.
+    
+    Args:
+        image_size (tuple[int, int]): Desired output image dimensions (height, width).
+        is_train (bool): Whether to include data augmentation (True for training).
+    
+    Returns:
+        torchvision.transforms.Compose: Transformation pipeline.
+    """
+    if is_train:
+        transform_list = [
+            transforms.Lambda(preprocess_image),
+            transforms.Resize(image_size),
+            transforms.ToTensor(),
+            transforms.RandomRotation(degrees=(-30, 30)),
+            transforms.RandomHorizontalFlip(p=0.5),
+            transforms.ColorJitter(brightness=0.2, contrast=0.2)
+        ]
+    else:
+        transform_list = [
+            transforms.Lambda(preprocess_image),
+            transforms.Resize(image_size),
+            transforms.ToTensor()
+        ]
+    return transforms.Compose(transform_list)
+
+
+#########################################
+# Original Dataloader (TIFF files)
+#########################################
 
 class Data_Class(Dataset):
     """
     Custom Dataset for loading images with train-test splitting functionality.
-
-    Args:
-        data_dir (str): Path to the directory containing images.
-        transform (callable, optional): Transformations to apply to the images. Defaults to None.
-        split (str): Subset to load, either 'train' or 'test'. Defaults to 'train'.
-        test_size (float): Proportion of the dataset to use for testing. Defaults to 0.2.
-        random_seed (int): Random seed for reproducibility. Defaults to 42.
+    Reads image files (.TIF/.tif) from a directory.
     """
     def __init__(self, data_dir, transform=None, split="train", test_size=0.2, random_seed=42):
         self.data_dir = data_dir
@@ -38,22 +85,9 @@ class Data_Class(Dataset):
             raise ValueError("split must be 'train' or 'test'")
 
     def __len__(self):
-        """
-        Returns:
-            int: Number of images in the dataset.
-        """
         return len(self.image_files)
 
     def __getitem__(self, idx):
-        """
-        Retrieve an image by index.
-
-        Args:
-            idx (int): Index of the image to retrieve.
-
-        Returns:
-            PIL.Image.Image: Transformed image.
-        """
         img_path = os.path.join(self.data_dir, self.image_files[idx])
         image = Image.open(img_path)
 
@@ -62,68 +96,10 @@ class Data_Class(Dataset):
 
         return image
 
-
-def preprocess_image(image):
+def create_dataloaders(data_dir, image_size=(224, 224), batch_size=8, test_size=0.2,
+                       world_size=1, rank=0, is_ddp=False):
     """
-    Normalize and convert an image to RGB format.
-
-    Args:
-        image (PIL.Image.Image): Input PIL image.
-
-    Returns:
-        PIL.Image.Image: Preprocessed PIL image.
-    """
-    sample = np.array(image)
-    sample = cv2.normalize(sample, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    processed_image = Image.fromarray(sample).convert('L')
-    return processed_image
-
-
-def get_transforms(image_size=(224, 224), is_train=True):
-    """
-    Generate transformations for training or testing.
-
-    Args:
-        image_size (tuple[int, int]): Desired image dimensions (height, width). Defaults to (2048, 2048).
-        is_train (bool): Whether to include data augmentation (True for training). Defaults to True.
-
-    Returns:
-        torchvision.transforms.Compose: Transformation pipeline.
-    """
-    if is_train:
-        transform_list = [
-            transforms.Lambda(preprocess_image),
-            transforms.Resize(image_size),
-            transforms.ToTensor(),
-            transforms.RandomRotation(degrees=(-30, 30)),
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2)
-        ]
-    else:
-        transform_list = [
-            transforms.Lambda(preprocess_image),
-            transforms.Resize(image_size),
-            transforms.ToTensor()
-        ]
-
-    return transforms.Compose(transform_list)
-
-
-def create_dataloaders(data_dir, image_size=(224, 224), batch_size=8, test_size=0.2, world_size=1, rank=0, is_ddp=False):
-    """
-    Create PyTorch DataLoader objects for training and testing, with optional DDP support.
-
-    Args:
-        data_dir (str): Path to the directory containing images.
-        image_size (tuple[int, int]): Desired image dimensions (width, height). Defaults to (224, 224).
-        batch_size (int): Batch size for the DataLoader. Defaults to 8.
-        test_size (float): Proportion of the dataset to use for testing. Defaults to 0.2.
-        world_size (int): Number of processes in DDP. Defaults to 1.
-        rank (int): Rank of the current process in DDP. Defaults to 0.
-        is_ddp (bool): Whether to use Distributed Data Parallel (DDP). Defaults to False.
-
-    Returns:
-        tuple[DataLoader, DataLoader]: Tuple containing the train and test DataLoaders.
+    Create DataLoader objects for training and testing from a directory of image files.
     """
     image_size = tuple(image_size)
     
@@ -151,8 +127,102 @@ def create_dataloaders(data_dir, image_size=(224, 224), batch_size=8, test_size=
         train_dataset,
         batch_size=batch_size,
         shuffle=(train_sampler is None),
-        sampler=train_sampler
+        sampler=train_sampler,
+        pin_memory=True  # GPU efficient
     )
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        pin_memory=True
+    )
 
+    return train_loader, test_loader
+
+
+#########################################
+# New NPZ Dataloader (Pre-extracted patches)
+#########################################
+
+class NPZ_Patch_Dataset(Dataset):
+    """
+    Custom Dataset for loading pre-extracted patches from a single NPZ file.
+    The NPZ file must have a key 'patches' containing an array of shape (N, C, H, W).
+    Train/test splitting is done on patch indices.
+    """
+    def __init__(self, npz_path, transform=None, split="train", test_size=0.2, random_seed=42):
+        data = np.load(npz_path)
+        self.all_patches = data["patches"]  # shape: (N, C, H, W)
+        self.transform = transform
+
+        indices = np.arange(self.all_patches.shape[0])
+        train_indices, test_indices = train_test_split(
+            indices, test_size=test_size, random_state=random_seed
+        )
+        if split == "train":
+            self.indices = train_indices
+        elif split == "test":
+            self.indices = test_indices
+        else:
+            raise ValueError("split must be 'train' or 'test'")
+
+    def __len__(self):
+        return len(self.indices)
+
+    def __getitem__(self, idx):
+        real_idx = self.indices[idx]
+        patch = self.all_patches[real_idx]  # shape: (C, H, W)
+
+        # Convert numpy patch to PIL image.
+        if patch.shape[0] == 1:
+            # Grayscale image: remove the channel dimension.
+            patch_img = Image.fromarray(patch[0], mode="L")
+        elif patch.shape[0] == 3:
+            # Color image: transpose to (H, W, C)
+            patch_img = Image.fromarray(np.transpose(patch, (1, 2, 0)), mode="RGB")
+        else:
+            raise ValueError(f"Unexpected number of channels: {patch.shape[0]}")
+
+        if self.transform:
+            patch_img = self.transform(patch_img)
+
+        return patch_img
+
+def create_npz_dataloaders(npz_path, image_size=(224, 224), batch_size=8, test_size=0.2,
+                           world_size=1, rank=0, is_ddp=False):
+    """
+    Create DataLoader objects for training and testing from a single NPZ file containing patches.
+    """
+    train_dataset = NPZ_Patch_Dataset(
+        npz_path=npz_path,
+        transform=get_transforms(image_size=image_size, is_train=True),
+        split="train",
+        test_size=test_size
+    )
+    test_dataset = NPZ_Patch_Dataset(
+        npz_path=npz_path,
+        transform=get_transforms(image_size=image_size, is_train=False),
+        split="test",
+        test_size=test_size
+    )
+    
+    if is_ddp:
+        train_sampler = distributed.DistributedSampler(train_dataset, num_replicas=world_size, rank=rank)
+    else:
+        train_sampler = None
+
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=(train_sampler is None),
+        sampler=train_sampler,
+        pin_memory=True  # for efficient GPU transfers
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        pin_memory=True
+    )
+    
     return train_loader, test_loader
