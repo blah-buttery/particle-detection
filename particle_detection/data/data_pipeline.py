@@ -42,9 +42,9 @@ def get_transforms(image_size=(224, 224), is_train=True):
             transforms.Lambda(preprocess_image),
             transforms.Resize(image_size),
             transforms.ToTensor(),
-            transforms.RandomRotation(degrees=(-30, 30)),
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.ColorJitter(brightness=0.2, contrast=0.2)
+            #transforms.RandomRotation(degrees=(-30, 30)),
+            #transforms.RandomHorizontalFlip(p=0.5),
+            #transforms.ColorJitter(brightness=0.2, contrast=0.2)
         ]
     else:
         transform_list = [
