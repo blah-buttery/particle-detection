@@ -49,31 +49,45 @@ def load_model(model, model_path, device):
         print(f"Model not found at {model_path}. Initializing a new model.")
     return model
 
-def save_metrics_and_plots(filepath, losses, num_epochs, image_size):
+def save_metrics_and_plots(filepath, metrics, num_epochs):
     """
-    Saves a plot of training loss metrics to a specified file.
-
-    Creates the directory for the file if it does not exist.
-
+    Save a single figure with separate subplots for each metric.
+    
+    Each metric in the dictionary is plotted in its own subplot so that differences 
+    in magnitude are easier to visualize.
+    
     Args:
-        filepath (str): Full path to save the plot (including the file name and extension).
-        losses (list[float]): List of loss values for each epoch.
+        filepath (str): Full path (including filename and extension) to save the plot.
+        metrics (dict): Dictionary containing lists of loss values for each epoch.
+                        Expected keys: 'total_losses', 'recon_losses', 'kl_losses', 'contrastive_losses'.
         num_epochs (int): Total number of training epochs.
-        image_size (tuple[int, int]): Tuple representing the image size (height, width).
-
+    
     Returns:
         None
     """
+    import os
+    import matplotlib.pyplot as plt
+
+    # Ensure the directory exists.
     directory = os.path.dirname(filepath)
     os.makedirs(directory, exist_ok=True)
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(losses, label="Loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.grid(True)
-    plt.title(f"Loss for ae_{num_epochs}_{image_size[0]}x{image_size[1]}")
-    plt.legend()
+    epochs = range(1, num_epochs + 1)
+
+    # Create a 2x2 grid for the subplots.
+    fig, axs = plt.subplots(2, 2, figsize=(12, 8))
+    axs = axs.flatten()
+    
+    # Plot each metric in its own subplot.
+    for ax, (key, values) in zip(axs, metrics.items()):
+        ax.plot(epochs, values, marker='o', linestyle='-')
+        ax.set_title(key.replace("_", " ").capitalize())
+        ax.set_xlabel("Epoch")
+        ax.set_ylabel("Value")
+        ax.grid(True)
+    
+    fig.suptitle(f"Training Metrics over {num_epochs} Epochs")
+    fig.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(filepath)
     plt.close()
-    print(f"Loss plot saved to {filepath}")
+    #print(f"Subplots saved to {filepath}")
