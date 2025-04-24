@@ -1,0 +1,9 @@
+{
+    "model_path": "saved_models/vae_128d_200epochs_20250406_091436/model.pth",
+    "image_dir": "data/",
+    "save_dir": "./results/eval_run_02",
+    "batch_size": 8,
+    "eps": 8.0,
+    "min_samples": 4,
+    "pca_components": 50
+}
