@@ -39,7 +39,7 @@ def run_eval(model_path, image_dir, csv_dir, save_dir, batch_size=8, eps=8.0, mi
         dbscan = DBSCAN(eps=eps, min_samples=min_samples)
         cluster_labels = dbscan.fit_predict(pca)
 
-        cluster_view(cluster_labels, pca, save_path=os.path.join(save_dir, f"cluster_view_{i}.png"))
+        #cluster_view(cluster_labels, pca, save_path=os.path.join(save_dir, f"cluster_view_{i}.png"))
       
         visualize_clusters(
             img_tensor.cpu(), cluster_labels, patch_size=16,
