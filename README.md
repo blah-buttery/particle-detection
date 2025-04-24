@@ -1,3 +1,11 @@
+# Deep Learning Model for Nanoparticle Detection
+
+## Overview
+
+This project implements nanoparticle detection using a Variational Autoencoder (VAE) combined with contrastive loss and clustering strategies. The goal is to enable unsupervised particle discovery and improve detection performance through latent space refinement.
+
+---
+
 ## Project Directory Overview
 
 This repository is organized to support **training, evaluation, and visualization** for nanoparticle detection using a Variational Autoencoder (VAE) with contrastive loss and clustering techniques.
@@ -20,13 +28,17 @@ This repository is organized to support **training, evaluation, and visualizatio
 ## **Notes:**
 - The project follows a **modular structure**, separating core model logic, utilities, and example usage for easier development and testing.
 
-## 📄 Documentation
+---
+
+## Documentation
 
 The `docs/` directory contains supporting documentation for the project, including:
 
 - **Weekly Reports:** Summaries of weekly progress, tasks completed, challenges faced, and plans for the following week.
 - **Final Report:** Comprehensive overview of the project, including methodology, results, evaluation metrics, and conclusions.
 - **PowerPoint:** Presentation slides for the final project demonstration, covering goals, design, implementation, testing, and lessons learned.
+
+---
 
 ## How to Use
 
@@ -60,6 +72,14 @@ This will save the model in the `saved_models` directory.
 > python3 -m particle_detection.vae.train_model --config config/training_config.json --num_epochs 100 --batch_size 32
 > ```
 
+> **Tip:** Use the `--help` flag with any script to see available arguments.  
+> Example:  
+> ```bash
+> python3 -m particle_detection.vae.train_model --help
+> ```
+
+> **Note:** GPU acceleration is supported. For multi-GPU training, use the `--is_ddp` flag.
+
 ---
 
 ### Evaluating the model
@@ -71,6 +91,8 @@ python3 -m particle_detection.vae.eval --config config/eval_config.json
 ```
 
 > **Note:** As with training, evaluation parameters from the config file can be overridden using command-line arguments.
+
+---
 
 ## License
 
