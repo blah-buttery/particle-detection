@@ -45,5 +45,5 @@ patches_dataset/
 data/
 saved_models/
 test_dataset/
-autoencoder/
-clustering/
+particle_detection/autoencoder/
+particle_detection/clustering/
