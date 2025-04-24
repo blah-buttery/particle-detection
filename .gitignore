@@ -48,3 +48,4 @@ test_dataset/
 particle_detection/autoencoder/
 particle_detection/clustering/
 particle_detection/utils/visualization.py
+results/
