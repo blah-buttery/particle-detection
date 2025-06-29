@@ -85,16 +85,10 @@ python3 -m particle_detection.vae.eval --config config/eval_config.json
 
 ## License
 
-    Copyright 2025 Todd A. Lee
+This project is not open-source.
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
+© 2025 Todd A. Lee. All rights reserved.
 
-        http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+This code is published for educational and portfolio purposes only.  
+You may not copy, modify, distribute, or use this project in any form  
+without express written permission.
