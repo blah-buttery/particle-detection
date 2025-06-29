@@ -15,7 +15,6 @@ This repository is organized to support **training, evaluation, and visualizatio
 | Path                      | Description                                                          |
 |---------------------------|----------------------------------------------------------------------|
 | `config/`                 | Contains configuration JSON files for training and evaluation setup. |
-| `docs/`                   | Contains project documentation, including build process notes, weekly reports, final report, and presentation materials.                              |
 | `examples/`               | Example jupyter notebooks for running clustering and evaluation.               |
 | `particle_detection/`     | Main source code including data loading, VAE model, training, evaluation, and clustering utilities. |
 | `.gitattributes`          | Configures Git LFS to handle large model checkpoint files (`.pth`).   |
@@ -27,16 +26,6 @@ This repository is organized to support **training, evaluation, and visualizatio
 
 ## **Notes:**
 - The project follows a **modular structure**, separating core model logic, utilities, and example usage for easier development and testing.
-
----
-
-## Documentation
-
-The `docs/` directory contains supporting documentation for the project, including:
-
-- **Weekly Reports:** Summaries of weekly progress, tasks completed, challenges faced, and plans for the following week.
-- **Final Report:** Comprehensive overview of the project, including methodology, results, evaluation metrics, and conclusions.
-- **PowerPoint:** Presentation slides for the final project demonstration, covering goals, design, implementation, testing, and lessons learned.
 
 ---
 
